@@ -1,0 +1,292 @@
+.tc-calendar {
+    --tc-font-size: 13px;
+    --tc-primary: var(--b3-theme-primary, #4b82ff);
+    --tc-text: var(--b3-theme-on-background, #222);
+    --tc-muted: color-mix(in srgb, var(--tc-text) 50%, transparent);
+    --tc-border: color-mix(in srgb, var(--tc-text) 10%, transparent);
+    --tc-card: color-mix(in srgb, var(--b3-theme-background, #fff) 96%, var(--tc-primary) 4%);
+    --tc-bg-1: color-mix(in srgb, var(--b3-theme-background, #fff) 96%, var(--tc-primary) 4%);
+    --tc-bg-2: color-mix(in srgb, var(--b3-theme-background, #fff) 99%, var(--tc-primary) 1%);
+    --tc-holiday: color-mix(in srgb, var(--tc-primary) 80%, #d63d3d 20%);
+    --tc-work: color-mix(in srgb, var(--tc-primary) 35%, #ca8a04 65%);
+    --tc-term: color-mix(in srgb, var(--tc-primary) 75%, #2f8f83 25%);
+
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42em;
+    padding: 0.54em;
+    font-size: var(--tc-font-size);
+    color: var(--tc-text);
+    border-radius: 0.46em;
+    border: 1px solid transparent;
+    background: transparent;
+    box-shadow: none;
+    box-sizing: border-box;
+    font-family: var(--b3-font-family, "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif);
+}
+
+.tc-calendar[data-style="card"] {
+    background: var(--b3-theme-background, #f7f7f7);
+    background-image: linear-gradient(180deg, var(--tc-bg-1), var(--tc-bg-2));
+    border-color: var(--tc-border);
+    box-shadow:
+        0 1px 0 color-mix(in srgb, var(--tc-text) 6%, transparent),
+        0 8px 20px color-mix(in srgb, var(--tc-text) 8%, transparent);
+}
+
+.tc-header {
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1.9em repeat(7, minmax(0, 1fr));
+    grid-template-rows: 1.56em 1.56em;
+    row-gap: 0.02em;
+}
+
+.tc-nav {
+    grid-column: 6 / span 2;
+    grid-row: 2;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+}
+
+.tc-btn {
+    border: 1px solid var(--tc-border);
+    background: var(--tc-card);
+    color: var(--tc-text);
+    border-radius: 999px;
+    min-width: 1.56em;
+    height: 1.56em;
+    padding: 0;
+    cursor: pointer;
+    font-size: calc(var(--tc-font-size) * 0.78);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.tc-btn[data-action="today"] {
+    background: color-mix(in srgb, var(--tc-primary) 16%, var(--b3-theme-background, #fff));
+    border-color: color-mix(in srgb, var(--tc-primary) 40%, transparent);
+    color: color-mix(in srgb, var(--tc-primary) 78%, var(--tc-text) 22%);
+    font-weight: 600;
+}
+
+.tc-btn:hover {
+    border-color: color-mix(in srgb, var(--tc-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--tc-primary) 10%, transparent);
+}
+
+.tc-title {
+    grid-column: 2 / span 2;
+    grid-row: 1;
+    justify-self: center;
+    text-align: center;
+    font-size: calc(var(--tc-font-size) * 0.98);
+    font-weight: 600;
+    line-height: 1.12;
+}
+
+.tc-month {
+    grid-column: 2 / span 2;
+    grid-row: 2;
+    justify-self: center;
+    text-align: center;
+    font-size: calc(var(--tc-font-size) * 0.98);
+    font-weight: 500;
+    line-height: 1.1;
+}
+
+.tc-quarter {
+    grid-column: 6 / span 2;
+    grid-row: 1;
+    justify-self: center;
+    text-align: center;
+    font-size: calc(var(--tc-font-size) * 0.98);
+    font-weight: 600;
+    line-height: 1.12;
+    color: var(--tc-text);
+}
+
+.tc-week {
+    display: grid;
+    grid-template-columns: 1.9em repeat(7, minmax(0, 1fr));
+    gap: 0;
+}
+
+.tc-weekhead,
+.tc-weekday,
+.tc-weeknum {
+    text-align: center;
+    font-size: calc(var(--tc-font-size) * 0.9);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.tc-weekhead,
+.tc-weekday {
+    color: color-mix(in srgb, var(--tc-text) 88%, transparent);
+    padding: 0.08em 0;
+}
+
+.tc-grid {
+    display: grid;
+    grid-template-columns: 1.9em repeat(7, minmax(0, 1fr));
+    grid-auto-rows: calc(var(--tc-font-size) * 2.4);
+    row-gap: 0.12em;
+    column-gap: 0;
+    flex: 1;
+}
+
+.tc-weeknum {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.14em;
+    color: color-mix(in srgb, var(--tc-text) 74%, transparent);
+}
+
+.tc-cell {
+    border-radius: 0.42em;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.08em 0.14em 0.02em;
+    width: 85%;
+    justify-self: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.tc-cell:hover {
+    border-color: color-mix(in srgb, var(--tc-primary) 16%, transparent);
+    background: color-mix(in srgb, var(--tc-primary) 6%, transparent);
+}
+
+.tc-calendar[data-style="card"] .tc-cell {
+    border-color: color-mix(in srgb, var(--tc-text) 6%, transparent);
+    background: color-mix(in srgb, var(--b3-theme-background, #fff) 97%, var(--tc-primary) 3%);
+}
+
+.tc-calendar[data-style="card"] .tc-cell:hover {
+    border-color: color-mix(in srgb, var(--tc-primary) 30%, transparent);
+    background: color-mix(in srgb, var(--tc-primary) 12%, transparent);
+}
+
+.tc-cell--muted {
+    color: var(--tc-muted);
+    opacity: 0.56;
+}
+
+.tc-cell--today {
+    background: color-mix(in srgb, var(--tc-primary) 14%, transparent);
+    border-color: color-mix(in srgb, var(--tc-primary) 35%, transparent);
+}
+
+.tc-calendar[data-style="card"] .tc-cell--today {
+    background: color-mix(in srgb, var(--tc-primary) 20%, transparent);
+}
+
+.tc-cell--selected {
+    background: color-mix(in srgb, var(--tc-primary) 18%, transparent);
+    border-color: color-mix(in srgb, var(--tc-primary) 55%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc-primary) 30%, transparent);
+}
+
+.tc-calendar[data-style="card"] .tc-cell--selected {
+    background: color-mix(in srgb, var(--tc-primary) 24%, transparent);
+}
+
+.tc-cell--holiday .tc-date {
+    color: var(--tc-holiday);
+}
+
+.tc-cell--work .tc-date {
+    color: var(--tc-work);
+}
+
+.tc-topline {
+    position: relative;
+    min-height: 0.98em;
+}
+
+.tc-date {
+    width: 100%;
+    text-align: center;
+    font-size: calc(var(--tc-font-size) * 0.72);
+    line-height: 1.06;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.tc-mini-wrap {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    gap: 0.16em;
+}
+
+.tc-mini {
+    font-size: calc(var(--tc-font-size) * 0.5);
+    line-height: 1;
+    padding: 0.08em 0.24em;
+    border-radius: 999px;
+    opacity: 0.58;
+}
+
+.tc-mini--off {
+    color: var(--tc-holiday);
+    background: color-mix(in srgb, var(--tc-holiday) 12%, transparent);
+}
+
+.tc-mini--work {
+    color: var(--tc-work);
+    background: color-mix(in srgb, var(--tc-work) 14%, transparent);
+}
+
+.tc-sub {
+    text-align: center;
+    font-size: calc(var(--tc-font-size) * 0.58);
+    line-height: 0.94;
+    color: color-mix(in srgb, var(--tc-text) 74%, transparent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 0.82em;
+    margin-top: 0.01em;
+}
+
+.tc-sub--festival {
+    color: var(--tc-holiday);
+    font-weight: 600;
+}
+
+.tc-sub--term {
+    color: var(--tc-term);
+    font-weight: 500;
+}
+
+.tc-dots {
+    min-height: 0.28em;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.12em;
+    margin-top: 0.3em;
+}
+
+.tc-dot {
+    width: 0.22em;
+    height: 0.22em;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tc-primary) 68%, var(--tc-text) 32%);
+}

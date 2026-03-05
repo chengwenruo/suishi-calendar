@@ -1,0 +1,37 @@
+{
+    "name": "suishi-calendar",
+    "author": "Ninan",
+    "url": "",
+    "version": "0.0.3",
+    "minAppVersion": "3.0.12",
+    "disabledInPublish": false,
+    "backends": [
+        "all"
+    ],
+    "frontends": [
+        "all"
+    ],
+    "displayName": {
+        "default": "SuiShi Calendar",
+        "zh_CN": "岁时日历"
+    },
+    "description": {
+        "default": "SuiShi Calendar brings Gregorian/Lunar dates, Chinese holidays, solar terms and diary quick-jump into a compact SiYuan sidebar calendar.",
+        "zh_CN": "岁时日历将公历/农历、法定节假日、二十四节气与日记跳转整合到思源侧边栏，提供紧凑直观的时间视图。"
+    },
+    "readme": {
+        "default": "README.md",
+        "zh_CN": "README_zh_CN.md"
+    },
+    "keywords": [
+        "calendar",
+        "lunar",
+        "siyuan",
+        "diary"
+    ],
+    "funding": {
+        "custom": [
+            "https://github.com/chengwenruo/SuiShi-Calendar"
+        ]
+    }
+}
