@@ -276,6 +276,20 @@ function renderDailyNotePath(template, date) {
     });
 }
 
+function joinPathSegments(...segments) {
+    return segments
+        .filter((segment) => typeof segment === "string" && segment.trim() !== "")
+        .map((segment, index) => {
+            const normalized = segment.replace(/\\/g, "/");
+            if (index === 0) {
+                return normalized.replace(/\/+$/, "");
+            }
+            return normalized.replace(/^\/+/, "").replace(/\/+$/, "");
+        })
+        .filter(Boolean)
+        .join("/");
+}
+
 function createLunarFormatter() {
     try {
         return new Intl.DateTimeFormat("zh-u-ca-chinese", {
@@ -361,9 +375,15 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
         this.resizeObserver = null;
         this.rootMutationObserver = null;
         this.saveConfigTimer = null;
+        this.refreshCalendarTimer = null;
+        this.pendingDateClickTimer = null;
 
         this.handleWheel = this.handleWheel.bind(this);
         this.handleRootMutation = this.handleRootMutation.bind(this);
+        this.handleWindowFocus = this.handleWindowFocus.bind(this);
+        this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+        this.handleCalendarCellClick = this.handleCalendarCellClick.bind(this);
+        this.handleCalendarCellDoubleClick = this.handleCalendarCellDoubleClick.bind(this);
 
         this.addIcons(SETTINGS_ICON_SYMBOL);
         this.initDock();
@@ -385,6 +405,12 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
             },
         });
         this.observeRootStyleChanges();
+        if (typeof window !== "undefined") {
+            window.addEventListener("focus", this.handleWindowFocus);
+        }
+        if (typeof document !== "undefined") {
+            document.addEventListener("visibilitychange", this.handleVisibilityChange);
+        }
     }
 
     onunload() {
@@ -401,9 +427,23 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
             clearTimeout(this.saveConfigTimer);
             this.saveConfigTimer = null;
         }
+        if (this.refreshCalendarTimer) {
+            clearTimeout(this.refreshCalendarTimer);
+            this.refreshCalendarTimer = null;
+        }
+        if (this.pendingDateClickTimer) {
+            clearTimeout(this.pendingDateClickTimer);
+            this.pendingDateClickTimer = null;
+        }
         if (this.topBarSetting) {
             this.topBarSetting.remove();
             this.topBarSetting = null;
+        }
+        if (typeof window !== "undefined") {
+            window.removeEventListener("focus", this.handleWindowFocus);
+        }
+        if (typeof document !== "undefined") {
+            document.removeEventListener("visibilitychange", this.handleVisibilityChange);
         }
     }
 
@@ -815,13 +855,8 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
             });
         });
 
-        this.calendarGrid.addEventListener("click", (event) => {
-            const cell = event.target.closest(".tc-cell");
-            if (!cell || !cell.dataset.date) return;
-            this.selectedDateKey = cell.dataset.date;
-            this.renderCalendar();
-            this.openDailyNoteByDate(cell.dataset.date);
-        });
+        this.calendarGrid.addEventListener("click", this.handleCalendarCellClick);
+        this.calendarGrid.addEventListener("dblclick", this.handleCalendarCellDoubleClick);
 
         this.calendarRoot.addEventListener("wheel", this.handleWheel, { passive: false });
         this.installResizeObserver();
@@ -832,6 +867,10 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
     unmountCalendar() {
         if (this.calendarRoot) {
             this.calendarRoot.removeEventListener("wheel", this.handleWheel);
+        }
+        if (this.pendingDateClickTimer) {
+            clearTimeout(this.pendingDateClickTimer);
+            this.pendingDateClickTimer = null;
         }
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
@@ -904,6 +943,80 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
     handleRootMutation() {
         if (this.config.fontMode === "siyuan") {
             this.applyFontSizing();
+        }
+    }
+
+    handleCalendarCellClick(event) {
+        const cell = event.target.closest(".tc-cell");
+        if (!cell || !cell.dataset.date) return;
+
+        const dateKey = cell.dataset.date;
+        if (this.pendingDateClickTimer) {
+            clearTimeout(this.pendingDateClickTimer);
+        }
+        this.pendingDateClickTimer = setTimeout(() => {
+            this.pendingDateClickTimer = null;
+            this.selectedDateKey = dateKey;
+            this.renderCalendar();
+            this.openDailyNoteByDate(dateKey);
+        }, 260);
+    }
+
+    handleCalendarCellDoubleClick(event) {
+        const cell = event.target.closest(".tc-cell");
+        if (!cell || !cell.dataset.date) return;
+
+        if (this.pendingDateClickTimer) {
+            clearTimeout(this.pendingDateClickTimer);
+            this.pendingDateClickTimer = null;
+        }
+        this.selectedDateKey = cell.dataset.date;
+        this.renderCalendar();
+        this.refreshCalendarData({ showMessageOnSuccess: true }).catch(() => {
+            // Error message is already handled inside refreshCalendarData.
+        });
+    }
+
+    handleWindowFocus() {
+        this.scheduleCalendarRefresh();
+    }
+
+    handleVisibilityChange() {
+        if (document.visibilityState === "visible") {
+            this.scheduleCalendarRefresh();
+        }
+    }
+
+    invalidateDiaryCaches() {
+        this.monthDiaryKey = "";
+        this.monthDiaryMap = new Map();
+        this.docWordCache.clear();
+    }
+
+    scheduleCalendarRefresh() {
+        if (this.refreshCalendarTimer) clearTimeout(this.refreshCalendarTimer);
+        this.refreshCalendarTimer = setTimeout(() => {
+            this.refreshCalendarTimer = null;
+            this.refreshCalendarData().catch(() => {
+                // Ignore passive refresh failures to avoid interrupting editing.
+            });
+        }, 180);
+    }
+
+    async refreshCalendarData(options = {}) {
+        const { showMessageOnSuccess = false } = options;
+        this.invalidateDiaryCaches();
+        if (!this.calendarGrid) return;
+        try {
+            await this.renderCalendar();
+            if (showMessageOnSuccess) {
+                showMessage("日记状态已刷新", 2000, "info");
+            }
+        } catch (error) {
+            if (showMessageOnSuccess) {
+                showMessage(`刷新失败：${error.message || error}`, 3000, "error");
+            }
+            throw error;
         }
     }
 
@@ -1503,15 +1616,8 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
     }
 
     async applyDailyNoteTemplate(docId, templatePath) {
-        const rawTemplatePath = String(templatePath || "").trim();
-        if (!rawTemplatePath) return;
-
-        let renderPath = rawTemplatePath;
-        const dataDir = window?.siyuan?.config?.system?.dataDir || "";
-        const isAbsPath = /^[A-Za-z]:[\\/]/.test(rawTemplatePath) || rawTemplatePath.startsWith("/");
-        if (!isAbsPath && dataDir) {
-            renderPath = `${dataDir}/templates/${rawTemplatePath}`;
-        }
+        const renderPath = this.resolveTemplateRenderPath(templatePath);
+        if (!renderPath) return;
 
         try {
             const renderRes = await fetchSyncPost("/api/template/render", {
@@ -1535,6 +1641,41 @@ module.exports = class TraditionalCalendarPlugin extends Plugin {
         } catch {
             // Template rendering is optional; keep created doc even if it fails.
         }
+    }
+
+    resolveTemplateRenderPath(templatePath) {
+        const rawTemplatePath = String(templatePath || "").trim();
+        if (!rawTemplatePath) return "";
+
+        const normalized = rawTemplatePath.replace(/\\/g, "/");
+        const dataDir = String(window?.siyuan?.config?.system?.dataDir || "").replace(/\\/g, "/");
+        const isWindowsAbsPath = /^[A-Za-z]:[\\/]/.test(rawTemplatePath);
+        const isUNCPath = /^\\\\/.test(rawTemplatePath);
+        if (isWindowsAbsPath || isUNCPath) {
+            return rawTemplatePath;
+        }
+
+        if (normalized.startsWith("/data/templates/")) {
+            if (dataDir) {
+                const templateSubPath = normalized.slice("/data/templates/".length);
+                return joinPathSegments(dataDir, "templates", templateSubPath);
+            }
+            return normalized;
+        }
+
+        if (normalized.startsWith("/templates/")) {
+            const templateSubPath = normalized.slice("/templates/".length);
+            if (dataDir) {
+                return joinPathSegments(dataDir, "templates", templateSubPath);
+            }
+            return `/data/templates/${templateSubPath}`;
+        }
+
+        const templateSubPath = normalized.replace(/^\/+/, "");
+        if (dataDir) {
+            return joinPathSegments(dataDir, "templates", templateSubPath);
+        }
+        return `/data/templates/${templateSubPath}`;
     }
 
     async setDailyNoteAttr(blockId, date) {

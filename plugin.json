@@ -2,7 +2,7 @@
     "name": "suishi-calendar",
     "author": "chengwenruo",
     "url": "https://github.com/chengwenruo/suishi-calendar",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "minAppVersion": "3.0.12",
     "disabledInPublish": false,
     "backends": [
